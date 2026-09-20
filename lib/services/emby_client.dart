@@ -131,9 +131,16 @@ class EmbyClient {
           headers: {...anon._headers, 'Content-Type': 'application/json'},
           body: jsonEncode({'Username': username, 'Pw': password, 'Password': password}),
         ));
-    if (res.statusCode == 401 || res.statusCode == 403 || res.statusCode == 400) {
-      throw EmbyException('用户名或密码错误', status: res.statusCode);
-    }
+   if (res.statusCode == 401) {
+     throw EmbyException('用户名或密码错误', status: res.statusCode);
+   }
+   if (res.statusCode == 400 || res.statusCode == 403 || res.statusCode == 404) {
+     throw EmbyException(
+       '服务器拒绝了登录请求(HTTP ${res.statusCode})。请检查地址、端口和 HTTP/HTTPS 是否正确,'
+       '以及这个地址确实是 Emby 服务器。',
+       status: res.statusCode,
+     );
+   }
     final j = anon._decode(res) as Map<String, dynamic>;
     final user = j['User'] as Map<String, dynamic>;
     return EmbyClient(
