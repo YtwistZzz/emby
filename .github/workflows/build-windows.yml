@@ -1,0 +1,44 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: 生成 Windows 平台工程
+        shell: bash
+        run: |
+          mkdir -p /tmp/bk
+          cp -r lib /tmp/bk/lib
+          cp pubspec.yaml /tmp/bk/pubspec.yaml
+          flutter create --platforms=windows --project-name emby_player --org com.embyplayer .
+          rm -rf lib
+          cp -r /tmp/bk/lib lib
+          cp /tmp/bk/pubspec.yaml pubspec.yaml
+          rm -f test/widget_test.dart
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 静态检查
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
+      - name: 构建
+        run: flutter build windows --release
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: EmbyPlayer-win64
+          path: build/windows/x64/runner/Release/
